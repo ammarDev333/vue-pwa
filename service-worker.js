@@ -13,8 +13,30 @@ self.addEventListener('install', (event) => {
   
   self.addEventListener('fetch', (event) => {
     event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
-      })
+      caches.match(event.request)
+        .then((response) => {
+          // Return the cached response if it exists
+          if (response) {
+            return response;
+          }
+  
+          // Fetch and cache the resource
+          return fetch(event.request)
+            .then((res) => {
+              // Check if the response is valid
+              if (!res || res.status !== 200 || res.type !== 'basic') {
+                return res;
+              }
+  
+              const responseToCache = res.clone();
+  
+              caches.open('your-cache-name')
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+  
+              return res;
+            });
+        })
     );
   });
